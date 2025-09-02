@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import Header from '@/components/layout/Header';
-import RoleSelector from '@/components/layout/RoleSelector';
-import TabNavigation from '@/components/layout/TabNavigation';
-import Dashboard from '@/components/dashboard/Dashboard';
-import CustomerForm from '@/components/forms/CustomerForm';
-import AddressMap from '@/components/maps/AddressMap';
+import Header from './components/layout/Header';
+import RoleSelector from './components/layout/RoleSelector';
+import TabNavigation from './components/layout/TabNavigation';
+import Dashboard from './components/dashboard/Dashboard';
+import CustomerForm from './components/forms/CustomerForm';
+import AddressMap from './components/maps/AddressMap';
 import { Role } from '@/types';
 
 export default function App() {
