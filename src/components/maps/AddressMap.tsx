@@ -14,120 +14,45 @@ async function loadLeaflet() {
     link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
     document.head.appendChild(link);
 
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Leaflet load error'));
-    document.head.appendChild(s);
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Leaflet no pudo cargarse'));
+    document.body.appendChild(script);
   });
 }
 
-type Props = {
-  /** Dirección inicial (opcional). Si viene con location, se centra ahí. */
-  address?: Address | null;
-  /** Callback cuando el usuario fija una ubicación (drag o click en el mapa). */
-  onLocationSelect?: (addr: Address) => void;
-  /** Alto del contenedor del mapa. */
-  height?: number;
-  /** Centro inicial si no hay address.location. */
-  defaultCenter?: LatLng;
-};
-
-export default function AddressMap({
-  address,
-  onLocationSelect,
-  height = 360,
-  defaultCenter = { lat: -41.468, lng: -72.941 } // Puerto Montt aprox
-}: Props) {
-  const mapEl = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-
-  const { reverse, loading, error } = useGeocoding();
+export default function AddressMap({ address }: { address?: Address }) {
+  const mapRef = useRef<HTMLDivElement | null>(null);
   const [current, setCurrent] = useState<Address | null>(address ?? null);
+  const { reverse, loading, error } = useGeocoding();
 
-  // Crea/actualiza mapa
   useEffect(() => {
-    let mounted = true;
-
     (async () => {
       await loadLeaflet();
-      if (!mapEl.current || !mounted) return;
-
-      // Inicializa mapa
-      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
-      const start = address?.location ?? defaultCenter;
-      const map = window.L.map(mapEl.current).setView([start.lat, start.lng], address?.location ? 16 : 14);
-
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+      if (!mapRef.current) return;
+      const L = window.L;
+      const map = L.map(mapRef.current).setView([-41.4699, -72.9994], 14); // Puerto Montt aprox
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
-      // Crea marker (si hay coordenadas iniciales)
-      const ensureMarker = (latlng: LatLng) => {
-        if (!markerRef.current) {
-          markerRef.current = window.L.marker([latlng.lat, latlng.lng], { draggable: true }).addTo(map);
-          markerRef.current.on('dragend', async () => {
-            const { lat, lng } = markerRef.current.getLatLng();
-            await resolveAddress({ lat, lng });
-          });
-        } else {
-          markerRef.current.setLatLng([latlng.lat, latlng.lng]);
-        }
-      };
+      let marker: any = null;
 
-      if (address?.location) ensureMarker(address.location);
-
-      // Click en el mapa para reposicionar
       map.on('click', async (e: any) => {
-        const latlng = { lat: e.latlng.lat, lng: e.latlng.lng };
-        ensureMarker(latlng);
-        await resolveAddress(latlng);
+        const latlng: LatLng = { lat: e.latlng.lat, lng: e.latlng.lng };
+        if (marker) marker.remove();
+        marker = L.marker([latlng.lat, latlng.lng]).addTo(map);
+        const addr = await reverse(latlng);
+        setCurrent(addr);
       });
-
-      mapRef.current = map;
     })();
-
-    return () => { mounted = false; if (mapRef.current) mapRef.current.remove(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // crear una vez
-
-  // Si cambió address desde fuera, centra y mueve marker
-  useEffect(() => {
-    if (!address?.location || !mapRef.current) return;
-    const { lat, lng } = address.location;
-    mapRef.current.setView([lat, lng], 16);
-    if (!markerRef.current) {
-      markerRef.current = window.L.marker([lat, lng], { draggable: true }).addTo(mapRef.current);
-      markerRef.current.on('dragend', async () => {
-        const p = markerRef.current.getLatLng();
-        await resolveAddress({ lat: p.lat, lng: p.lng });
-      });
-    } else {
-      markerRef.current.setLatLng([lat, lng]);
-    }
-    setCurrent(address);
-  }, [address?.location?.lat, address?.location?.lng]); // solo reacciona a cambios reales
-
-  // Reverse geocoding y propagación
-  const resolveAddress = async (latlng: LatLng) => {
-    const addr = await reverse(latlng);
-    const next: Address = addr
-      ? { ...addr, confidence: addr.confidence ?? 'approx', source: addr.source ?? 'nominatim' }
-      : {
-          raw: `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`,
-          displayName: undefined,
-          location: latlng,
-          confidence: 'manual',
-          source: 'manual'
-        };
-    setCurrent(next);
-    onLocationSelect?.(next);
-  };
+  }, []);
 
   return (
-    <div className="space-y-2">
-      <div ref={mapEl} className="w-full rounded-lg border" style={{ height }} />
+    <div className="p-4 rounded-lg border bg-white space-y-3">
+      <h2 className="font-bold">Mapa</h2>
+      <div ref={mapRef} className="h-80 rounded-md overflow-hidden" />
       {loading && <LoadingSpinner label="Obteniendo dirección..." />}
       {error && <ErrorAlert message={error} />}
       {current?.location && (

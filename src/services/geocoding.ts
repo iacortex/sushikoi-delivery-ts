@@ -46,8 +46,11 @@ export async function reverseGeocode({ lat, lng }: LatLng): Promise<Address | nu
 
   const res = await fetch(url.toString(), { headers });
   if (!res.ok) return null;
-  const json = await res.json();
-  return fromNominatim(json);
+  const r = await res.json();
+  const addr = fromNominatim(r);
+  addr.confidence = 'approx';
+  addr.source = 'reverse';
+  return addr;
 }
 
 function fromNominatim(r: any): Address {
@@ -63,6 +66,6 @@ function fromNominatim(r: any): Address {
     country: a.country,
     location: r.lat && r.lon ? { lat: parseFloat(r.lat), lng: parseFloat(r.lon) } : undefined,
     confidence: 'approx',
-    source: 'nominatim'
+    source: 'nominatim',
   };
 }

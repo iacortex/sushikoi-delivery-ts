@@ -14,7 +14,7 @@ export default function TabNavigation({
 }) {
   return (
     <nav className="flex gap-1 border-b border-gray-200">
-      {tabs.map(t => (
+      {tabs.map((t) => (
         <button
           key={t.key}
           onClick={() => onChange(t.key)}

@@ -1,91 +1,60 @@
-// Tipos base del dominio SushiKoi
-export type UUID = string;
+// src/types/index.ts
 
-export type Role = 'CAJERO' | 'COCINERO' | 'DELIVERY';
+/* ====== Básicos ====== */
+export type Role = 'CAJERO' | 'COCINA' | 'DELIVERY' | 'ADMIN';
 
-export interface LatLng {
-  lat: number;
-  lng: number;
-}
+export type PaymentMethod = 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA';
 
+/* ====== Dirección / Cliente ====== */
 export interface Address {
-  raw: string;              // input del usuario
-  displayName?: string;     // formateado por Nominatim
-  houseNumber?: string;     // número si existe
-  street?: string;
+  street: string;
+  number?: string;
   city?: string;
   region?: string;
-  postcode?: string;
-  country?: string;
-  location?: LatLng;        // coordenadas exactas
-  confidence: 'exact' | 'approx' | 'manual';
-  source: 'nominatim' | 'cache' | 'manual';
-}
-
-export type PaymentMethod = 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'WEBPAY';
-export type PaymentStatus  = 'PENDIENTE' | 'PAGADO' | 'RECHAZADO' | 'REEMBOLSADO';
-
-export interface Payment {
-  method: PaymentMethod;
-  status: PaymentStatus;
-  amount: number;          // CLP
-  reference?: string;      // folio, transbank token, etc.
+  lat: number;
+  lng: number;
+  reference?: string;
 }
 
 export interface Customer {
-  id: UUID;
+  id: string;
   name: string;
-  phone?: string;
-  email?: string;
+  phone: string;
   address: Address;
+}
+
+/* ====== Items y Orden ====== */
+export interface OrderItem {
+  id: string;           // SKU o interno
+  name: string;
+  qty: number;
+  price: number;        // precio unitario
   notes?: string;
 }
 
-export type OrderStatus =
-  | 'CREADO'
-  | 'CONFIRMADO'
-  | 'EN_PREPARACION'
-  | 'LISTO_EMBALAJE'
-  | 'EN_REPARTO'
-  | 'ENTREGADO'
-  | 'CANCELADO';
-
-export interface OrderItem {
-  sku: string;
-  name: string;
-  qty: number;
-  unitPrice: number; // CLP
-}
-
-export interface RouteInfo {
-  distanceMeters: number;
-  durationSeconds: number;
-  geometry?: string; // polyline
+export enum OrderStatus {
+  PENDING = 'PENDING',          // creada por cajero
+  IN_KITCHEN = 'IN_KITCHEN',    // en preparación
+  PACKING = 'PACKING',          // embalando (cronómetro)
+  READY = 'READY',              // lista para retirar
+  ON_ROUTE = 'ON_ROUTE',        // repartidor en camino
+  DELIVERED = 'DELIVERED',      // entregada
+  CANCELLED = 'CANCELLED'       // cancelada
 }
 
 export interface Order {
-  id: UUID;
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
-  status: OrderStatus;
+  id: string;                   // p.ej. 'ORD-2025-0001'
   customer: Customer;
   items: OrderItem[];
-  subtotal: number;
-  deliveryFee: number;
-  total: number;
-  payment: Payment;
-  kitchenEtaSec?: number;   // estimado cocina
-  route?: RouteInfo;        // OSRM
-  navQrUrl?: string;        // QR a GMaps/Waze
-}
+  total: number;                // calculado = sum(qty*price)
+  status: OrderStatus;
+  paymentMethod?: PaymentMethod;
 
-export interface Promotion {
-  id: UUID;
-  title: string;
-  description?: string;
-  active: boolean;
-  validFrom?: string; // ISO
-  validTo?: string;   // ISO
-  discountPercent?: number;
-  fixedAmountOff?: number;
+  createdAt: string;            // ISO
+  updatedAt: string;            // ISO
+
+  // datos opcionales para delivery
+  etaMinutes?: number;
+  distanceMeters?: number;
+  deliveryNotes?: string;
 }

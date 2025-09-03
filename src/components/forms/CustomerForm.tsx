@@ -19,37 +19,38 @@ export default function CustomerForm({ onSubmit }: { onSubmit: (c: Customer) => 
   const submit = () => {
     if (!addr) return;
     const customer: Customer = {
-      id: crypto.randomUUID(),
       name,
       phone,
-      address: addr
+      address: addr,
+      createdAt: new Date().toISOString(),
     };
     onSubmit(customer);
   };
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="p-4 rounded-lg border bg-white space-y-3">
+      <h2 className="font-bold">Datos del cliente</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input
-          className="input"
+          className="border rounded-md px-3 py-2"
           placeholder="Nombre"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
         />
         <input
-          className="input"
+          className="border rounded-md px-3 py-2"
           placeholder="Teléfono"
           value={phone}
-          onChange={e => setPhone(e.target.value)}
+          onChange={(e) => setPhone(e.target.value)}
         />
-        <div className="md:col-span-2 flex gap-2">
+        <div className="sm:col-span-2 flex gap-2">
           <input
-            className="input flex-1"
-            placeholder="Dirección exacta (ej: Playa Guabil 6191)"
+            className="flex-1 border rounded-md px-3 py-2"
+            placeholder="Dirección (ej: Playa Guabil 6191, Puerto Montt)"
             value={rawAddress}
-            onChange={e => setRawAddress(e.target.value)}
+            onChange={(e) => setRawAddress(e.target.value)}
           />
-          <button onClick={handleGeocode} className="btn">
+          <button className="px-3 py-2 rounded-md bg-sushi-600 text-white" onClick={handleGeocode}>
             Buscar
           </button>
         </div>
@@ -63,7 +64,7 @@ export default function CustomerForm({ onSubmit }: { onSubmit: (c: Customer) => 
           <p className="font-medium">Dirección encontrada</p>
           <p className="text-gray-600">{addr.displayName}</p>
           <p className="text-gray-500">Confianza: {addr.confidence}</p>
-          <button className="btn mt-2" onClick={submit}>
+          <button className="px-3 py-2 rounded-md bg-black text-white mt-2" onClick={submit}>
             Guardar Cliente
           </button>
         </div>

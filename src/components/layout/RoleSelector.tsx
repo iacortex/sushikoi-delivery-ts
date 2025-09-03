@@ -15,7 +15,7 @@ export default function RoleSelector({
 }) {
   return (
     <div className="flex gap-2">
-      {ROLES.map(r => (
+      {ROLES.map((r) => (
         <button
           key={r.key}
           onClick={() => onChange(r.key)}
